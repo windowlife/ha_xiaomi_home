@@ -67,6 +67,12 @@ from .miot.miot_client import MIoTClient, get_miot_instance_async
 
 _LOGGER = logging.getLogger(__name__)
 
+_NON_STANDARD_ENTITY_ALLOWLIST = {
+    'switch.xiaomi_cn_629070259_eaffh1_is_on_p_8_1',
+    'select.yszn01_cn_427392652_ys2102_save_location_one_p_5_1',
+    'select.yszn01_cn_427392652_ys2102_save_location_two_p_5_2',
+}
+
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
@@ -248,7 +254,13 @@ async def async_setup_entry(
                         lambda prop: (
                             prop.need_filter or (
                                 miot_client.hide_non_standard_entities
-                                and prop.proprietary)),
+                                and prop.proprietary
+                                and device.gen_prop_entity_id(
+                                    ha_domain=platform,
+                                    spec_name=prop.name,
+                                    siid=prop.service.iid,
+                                    piid=prop.iid) not in
+                                _NON_STANDARD_ENTITY_ALLOWLIST)),
                         device.prop_list[platform]))
                     for prop in filter_props:
                         device.prop_list[platform].remove(prop)
